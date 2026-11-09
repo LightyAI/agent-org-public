@@ -1,0 +1,8 @@
+services:
+  queue:
+    build: .
+    image: agent-org-queue:0.1.0
+    ports: ["127.0.0.1:7340:7340"]
+    volumes: ["./data:/data"]
+    environment:
+      AGENT_ORG_TOKEN: ${AGENT_ORG_TOKEN:?set a token}

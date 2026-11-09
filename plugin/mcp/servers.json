@@ -1,0 +1,13 @@
+{
+  "agent-org-queue": {
+    "command": "node",
+    "args": [
+      "${CLAUDE_PLUGIN_ROOT}/mcp/queue-server/dist/index.js"
+    ],
+    "env": {
+      "AGENT_ORG_QUEUE_URL": "${AGENT_ORG_QUEUE_URL}",
+      "AGENT_ORG_QUEUE_TOKEN": "${AGENT_ORG_QUEUE_TOKEN}",
+      "AGENT_ORG_AREA": "${AGENT_ORG_AREA}"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+Phase 4. To confirm before setup: issue tracker (Linear or Jira), chat (Slack or Teams), hosting (company VPC), operators (fractional CTO + internal lead), evidence redaction — regulated data in demos must be synthetic fixtures only.

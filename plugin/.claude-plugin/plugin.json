@@ -1,0 +1,12 @@
+{
+  "name": "agent-org",
+  "version": "0.1.0",
+  "description": "Lead agents per area, a chief of staff, and one review queue for the operator.",
+  "author": {
+    "name": "Lighty AI"
+  },
+  "agents": "./agents",
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./mcp/servers.json"
+}

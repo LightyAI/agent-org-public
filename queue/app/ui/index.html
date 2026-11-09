@@ -1,0 +1,56 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Queue</title>
+<style>
+:root{--bg:#fff;--fg:#111;--mute:#666;--line:#e5e5e5;--sel:#eef3ff}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--fg:#eee;--mute:#999;--line:#333;--sel:#1e2a44}}
+body{margin:0;font:14px/1.4 system-ui;background:var(--bg);color:var(--fg);display:grid;grid-template-rows:40px 1fr;height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid var(--line)}
+main{display:grid;grid-template-columns:280px 1fr;min-height:0}
+#list{border-right:1px solid var(--line);overflow:auto}
+.row{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}.row.sel{background:var(--sel)}
+.tag{font-size:11px;color:var(--mute);text-transform:uppercase}
+#card{padding:16px 20px;overflow:auto}#card h2{margin:4px 0 2px;font-size:16px}
+.meta{color:var(--mute);font-size:12px}video{max-width:100%;border-radius:8px;margin:12px 0}
+.keys{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:8px 0;display:flex;gap:8px}
+.keys span{border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px}
+#empty{padding:40px;color:var(--mute)}
+</style></head><body>
+<header><b id="count">Queue</b><span class="meta" id="mode"></span></header>
+<main><div id="list"></div><div id="card"><div id="empty">Loading…</div></div></main>
+<script>
+const TOKEN = localStorage.getItem('token') || prompt('queue token'); localStorage.setItem('token', TOKEN);
+const H = {Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'};
+let cards=[], i=0, openedAt=Date.now();
+const esc=s=>(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function load(){cards=await (await fetch('/api/queue',{headers:H})).json(); i=Math.min(i,Math.max(0,cards.length-1)); render();}
+function render(){
+  document.getElementById('count').textContent=`Queue · ${cards.length} waiting`;
+  document.getElementById('list').innerHTML=cards.map((c,k)=>`<div class="row ${k===i?'sel':''}" onclick="i=${k};render()">
+    <div class="tag">${c.type} · ${c.area} · ${c.score??'–'}</div><div>${esc(c.title)}</div></div>`).join('');
+  const c=cards[i]; const el=document.getElementById('card'); openedAt=Date.now();
+  if(!c){el.innerHTML='<div id="empty">Queue is empty.</div>';return;}
+  const ev=JSON.parse(c.evidence_json||'null')||[]; const vid=ev.find(e=>e.kind==='video'); const links=JSON.parse(c.links_json||'null')||[];
+  const opts=JSON.parse(c.options_json||'null')||[];
+  el.innerHTML=`<div class="tag">${c.type} · ${c.area} · raised ${c.raised_at.slice(0,16)}${c.recommended?' · recommended: '+esc(c.recommended):''}</div>
+  <h2>${esc(c.title)}</h2>
+  ${opts.length?'<ol>'+opts.map((o,n)=>`<li><b>${n+1}. ${esc(o.label)}</b> — ${esc(o.consequence)}</li>`).join('')+'</ol>':''}
+  ${vid?`<video src="/evidence/${vid.path}" controls id="vid"></video>`:''}
+  <div style="white-space:pre-wrap">${esc(c.body_md)}</div>
+  <div class="meta">${links.map(l=>`<a href="${l}" target="_blank">${l}</a>`).join(' · ')}</div>
+  <div class="keys"><span>A approve</span><span>R reject</span><span>D defer</span><span>? ask</span><span>Space play</span><span>Enter open</span><span>J K move</span></div>`;
+}
+async function decide(verdict, note){const c=cards[i]; if(!c)return;
+  await fetch('/api/decide/'+c.id,{method:'POST',headers:H,body:JSON.stringify({verdict,note,latency_s:Math.round((Date.now()-openedAt)/1000)})}); await load();}
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  const c=cards[i]; const k=e.key;
+  if(k==='j'){i=Math.min(i+1,cards.length-1);render();} else if(k==='k'){i=Math.max(i-1,0);render();}
+  else if(k==='a'){decide(c.type==='brief'?'approve':'approve');}
+  else if(/^[1-4]$/.test(k)&&c?.options_json){const o=JSON.parse(c.options_json)[+k-1]; if(o)decide('pick:'+o.key);}
+  else if(k==='r'){const n=prompt('Reason (required)'); if(n)decide('reject',n);}
+  else if(k==='d'){decide('defer');}
+  else if(k==='?'){const n=prompt('Question for the lead'); if(n)decide('needs_info',n);}
+  else if(k===' '){e.preventDefault(); const v=document.getElementById('vid'); if(v) v.paused?v.play():v.pause();}
+  else if(k==='Enter'){const l=JSON.parse(c?.links_json||'null'); if(l?.[0])window.open(l[0]);}
+});
+load(); setInterval(load,30000);
+</script></body></html>

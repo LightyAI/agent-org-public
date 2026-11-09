@@ -1,0 +1,22 @@
+company: example
+queue_url: http://127.0.0.1:7340
+operator: alex
+trackers:
+  issues: linear           # linear | jira | github_issues
+  chat: slack              # slack | teams | none
+  code: github
+areas:
+  - key: platform
+    metric: p95 ingest latency under 2 s
+    linear_team: PLAT
+    repos: [example/platform]
+    slack_channels: [eng-platform]
+    wake_cron: "0 */2 8-18 * * 1-5"
+    max_subagents: 2
+always_card:
+  paths: ["**/migrations/**", "**/auth/**", "**/billing/**"]
+  diff_lines: 400
+scoring_weights: {customer: 40, reversibility: 25, staleness: 20, pattern: 15}
+evidence:
+  redact: []
+metrics: false

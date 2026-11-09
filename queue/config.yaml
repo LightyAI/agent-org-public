@@ -1,0 +1,3 @@
+scoring_weights: {customer: 40, reversibility: 25, staleness: 20, pattern: 15}
+unranked_surface_hours: 48
+expire_days: 7

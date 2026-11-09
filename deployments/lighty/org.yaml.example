@@ -1,0 +1,21 @@
+company: lighty
+queue_url: http://127.0.0.1:7340
+operator: anthony
+trackers: {issues: linear, chat: slack, code: github}
+areas:
+  - key: platform
+    metric: ingest and auth reliability; p95 report latency
+    linear_team: PLAT          # confirm key
+    repos: [lighty-ai/platform, lighty-ai/ingest]   # confirm
+    slack_channels: [eng-platform]
+    wake_cron: "0 */2 8-18 * * 1-5"
+    max_subagents: 2
+  # phase 2:
+  # - key: analysis      # workflow reconstruction, causal discovery, report pipeline
+  # - key: customer-automation
+always_card:
+  paths: ["**/migrations/**", "**/auth/**", "**/billing/**"]
+  diff_lines: 400
+scoring_weights: {customer: 40, reversibility: 25, staleness: 20, pattern: 15}
+evidence: {redact: []}
+metrics: false

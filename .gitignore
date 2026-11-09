@@ -1,0 +1,9 @@
+node_modules/
+dist/
+__pycache__/
+.venv/
+queue/data/
+.agent-org/
+brain/
+evidence/
+packets/
