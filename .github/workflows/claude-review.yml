@@ -109,6 +109,7 @@ jobs:
           if [ -s "$out/policy-changes.txt" ]; then
             {
               echo "> **This pull request changes the review rules or workflows.** A human must review these files; this review used the base branch's rules."
+              # shellcheck disable=SC2016  # literal backticks for Markdown
               sed 's/^/> - `/; s/$/`/' "$out/policy-changes.txt"
               echo
               cat "$out/summary.md"
