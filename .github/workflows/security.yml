@@ -34,28 +34,8 @@ jobs:
             exit 1
           fi
 
-  codeql:
-    name: CodeQL (${{ matrix.language }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [python, javascript-typescript, actions]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: github/codeql-action/init@800a1d8701a65d150a672fef0923dbf2660a62ec # v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: none
-          queries: security-extended
-      - uses: github/codeql-action/analyze@800a1d8701a65d150a672fef0923dbf2660a62ec # v4
-        with:
-          category: /language:${{ matrix.language }}
+  # CodeQL runs from the repository's code scanning default setup (Python,
+  # TypeScript, Actions), not from a workflow here: the two cannot coexist.
 
   dependencies:
     name: Dependency review
