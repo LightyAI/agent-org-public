@@ -33,4 +33,5 @@ Current phase: **1**. See `TODO.md`.
 - Python 3.12 for the queue service (FastAPI + SQLite via `sqlite3`, no ORM). Node 22 for the MCP server (TypeScript, `@modelcontextprotocol/sdk`).
 - IDs are ULIDs. Timestamps are ISO-8601 UTC strings.
 - Tests live next to the code (`test_*.py`, `*.test.ts`). Run `make test` before opening a PR.
+- Every PR must pass CI, the security checks (secret scan, CodeQL, dependency review) and review against `REVIEW.md` before a human merges it. Releases are a human-pushed `vX.Y.Z` tag matching `VERSION`.
 - Keep SPEC.md and this file in sync: if the code diverges from the spec on purpose, change the spec in the same PR.

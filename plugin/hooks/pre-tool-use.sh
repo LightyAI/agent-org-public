@@ -22,6 +22,7 @@ fi
 if [[ -n "$path" && -f "${AGENT_ORG_ROOT:-.}/.agent-org/forbidden.txt" ]]; then
   while IFS= read -r pat; do
     [[ -z "$pat" ]] && continue
+    # shellcheck disable=SC2053  # $pat is a glob from forbidden.txt; unquoted on purpose
     if [[ "$path" == $pat ]]; then
       echo "agent-org: $path matches always_card pattern '$pat'. Stop and raise a decide card." >&2; exit 2
     fi

@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  queue:
+    name: Queue service tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          python-version: "3.12"
+      - name: Test
+        run: make -C queue test
+
+  mcp-server:
+    name: MCP server build and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugin/mcp/queue-server
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+  plugin:
+    name: Plugin hooks and manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Shellcheck hooks
+        run: |
+          shopt -s nullglob globstar
+          files=(plugin/**/*.sh)
+          if [ ${#files[@]} -gt 0 ]; then shellcheck "${files[@]}"; fi
+      - name: Validate JSON manifests
+        run: |
+          shopt -s globstar nullglob
+          for f in plugin/.claude-plugin/*.json plugin/hooks/*.json plugin/mcp/*.json; do
+            jq empty "$f" || { echo "::error file=$f::invalid JSON"; exit 1; }
+          done
+      - name: Hook and CLI tests
+        run: |
+          shopt -s nullglob
+          tests=(plugin/hooks/*.test.mjs plugin/bin/*.test.mjs)
+          if [ ${#tests[@]} -gt 0 ]; then node --test "${tests[@]}"; fi
+      - name: One version everywhere
+        run: |
+          want="$(tr -d '[:space:]' < VERSION)"
+          fail=0
+          check() {
+            if [ "$2" != "$want" ]; then
+              echo "::error file=$1::version $2 does not match VERSION ($want)"
+              fail=1
+            fi
+          }
+          check plugin/.claude-plugin/plugin.json "$(jq -r .version plugin/.claude-plugin/plugin.json)"
+          check plugin/mcp/queue-server/package.json "$(jq -r .version plugin/mcp/queue-server/package.json)"
+          check queue/pyproject.toml "$(sed -n 's/^version = "\(.*\)"/\1/p' queue/pyproject.toml | head -1)"
+          exit $fail
+
+  image:
+    name: Queue image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: queue
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
