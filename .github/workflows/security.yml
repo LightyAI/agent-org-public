@@ -34,8 +34,8 @@ jobs:
             exit 1
           fi
 
-  # CodeQL runs from the repository's code scanning default setup (Python,
-  # TypeScript, Actions), not from a workflow here: the two cannot coexist.
+  # CodeQL runs from the code scanning default setup that the organization
+  # manages for this repository, not from a workflow here: the two cannot coexist.
 
   dependencies:
     name: Dependency review
